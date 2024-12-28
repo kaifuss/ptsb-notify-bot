@@ -9,7 +9,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # Настройка сервера
 HOST = "0.0.0.0"
 PORT = 514
-MAX_CONN = 10
+MAX_CONN = 20
 
 def process_event(event_data):
     """Обработка события.
