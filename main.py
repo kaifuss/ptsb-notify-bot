@@ -9,6 +9,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # Настройка сервера
 HOST = "0.0.0.0"
 PORT = 514
+MAX_CONN = 10
 
 def process_event(event_data):
     """Обработка события.
@@ -51,7 +52,7 @@ def start_server():
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((HOST, PORT))
-            server_socket.listen(5)
+            server_socket.listen(MAX_CONN)
             print(f"Server is listening on {HOST}:{PORT}...")
             while True:
                 client_socket, addr = server_socket.accept()
