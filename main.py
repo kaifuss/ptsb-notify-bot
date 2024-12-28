@@ -14,15 +14,15 @@ def process_event(event_data):
     """Обработка события.
     Сохраняет данные, если они содержат 'scan_machine.final_result'.
     """
-    if "scan_machine.final_result" in event_data:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"event_{timestamp}.log"
-        filepath = os.path.join(LOG_DIR, filename)
-        with open(filepath, "w") as log_file:
-            log_file.write(event_data)
-        print(f"Saved event to {filename}")
-    else:
-        print("Event does not match 'scan_machine.final_result'. Ignored.")
+#    if "scan_machine.final_result" in event_data:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    filename = f"event_{timestamp}.log"
+    filepath = os.path.join(LOG_DIR, filename)
+    with open(filepath, "w") as log_file:
+        log_file.write(event_data)
+    print(f"Saved event to {filename}")
+#    else:
+#        print("Event does not match 'scan_machine.final_result'. Ignored.")
 
 def handle_client_connection(client_socket):
     """
