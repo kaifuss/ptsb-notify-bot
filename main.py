@@ -48,15 +48,19 @@ def start_server():
     """
     Запускает TCP-сервер.
     """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind((HOST, PORT))
-        server_socket.listen(5)
-        print(f"Server is listening on {HOST}:{PORT}...")
-        while True:
-            client_socket, addr = server_socket.accept()
-            print(f"Connection established with {addr}")
-            with client_socket:
-                handle_client_connection(client_socket)
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.bind((HOST, PORT))
+            server_socket.listen(5)
+            print(f"Server is listening on {HOST}:{PORT}...")
+            while True:
+                client_socket, addr = server_socket.accept()
+                print(f"Connection established with {addr}")
+                with client_socket:
+                    handle_client_connection(client_socket)
+    except KeyboardInterrupt:
+        client_socket.close()
+        server_socket.close()
 
 if __name__ == "__main__":
     start_server()
