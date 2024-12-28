@@ -1,81 +1,90 @@
 import socket
 import json
 import re
-
+import os
+from datetime import datetime
 
 # Настройки
-HOST = '0.0.0.0'  # Слушать на всех интерфейсах
-PORT = 514        # Порт для Syslog
+HOST = os.getenv('HOST_LOCAL_ADDRESS')        
+PORT = os.getenv('HOST_LOCAL_PORT')
+HOST = '0.0.0.0'
+PORT = '514'
+SAVE_DIR = "incoming"  # Папка для сохранения сырых событий
 
+# создание папки
+os.makedirs(SAVE_DIR, exist_ok=True)
 
-# функция извлечения json части из строки
-def extract_json(data):
+def save_raw_event(data):
     """
-    Извлекает JSON-часть из строки.
+    Сохраняет сырое событие в файл.
     """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    filename = os.path.join(SAVE_DIR, f"event_{timestamp}.log")
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(data)
+
+def parse_event(data):
+    """
+    Проверяет и парсит событие, если оно валидное JSON.
+    """
+    # Сохраняем сырое событие
+    save_raw_event(data)
+
     try:
-        # Ищем содержимое между первой открывающей и последней закрывающей фигурными скобками
-        match = re.search(r'\{.*\}', data, re.DOTALL)
-        if match:
-            json_data = match.group(0)
-            return json.loads(json_data)
-        else:
-            print("JSON not found in the data.")
+        # Удаляем префикс до JSON, если он существует
+        match = re.search(r'\{.*\}', data)
+        if not match:
+            print("Invalid JSON received.")
             return None
-    except json.JSONDecodeError as e:
-        print(f"JSON decode error: {e}")
+
+        json_data = json.loads(match.group(0))
+        return json_data
+    except json.JSONDecodeError:
+        print("Invalid JSON received.")
         return None
 
-def process_event(event):
+def handle_event(event):
     """
-    Обработка входящего JSON-события.
+    Обрабатывает событие, если заголовок соответствует.
     """
-    if event:
-        print("Received event:")
-        print(json.dumps(event, indent=4, ensure_ascii=False))
-        
-        # Пример логики обработки
-        scan_id = event.get("scan_id", "N/A")
-        threat_level = event.get("result", {}).get("verdict", {}).get("threat_level", "UNKNOWN")
-        
-        # Пример действия
-        if threat_level == "CLEAN":
-            print(f"Scan {scan_id}: No threat detected.")
-        elif threat_level == "MALICIOUS":
-            print(f"Scan {scan_id}: Threat detected! Take immediate action.")
-        else:
-            print(f"Scan {scan_id}: Threat level unknown.")
+    header = "scan_machine.final_result"
+    if header not in event:
+        print("Event does not match the required header. Ignored.")
+        return
+
+    print("Received event:")
+    print(json.dumps(event, indent=4, ensure_ascii=False))
+
+    # Обработка данных события
+    scan_id = event.get("scan_id")
+    result = event.get("result", {})
+    verdict = result.get("verdict", {}).get("threat_level", "UNKNOWN")
+
+    if verdict == "CLEAN":
+        print(f"Scan {scan_id}: No threat detected.")
     else:
-        print("No valid event to process.")
+        print(f"Scan {scan_id}: Threat detected - {verdict}.")
 
 def start_server():
     """
-    Запуск TCP-сервера для обработки JSON-событий.
+    Запускает TCP сервер для приема событий.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
-        server_socket.listen(5)  # Очередь на 5 подключений
+        server_socket.listen(5)
         print(f"Server is listening on {HOST}:{PORT}...")
 
-        try:
-            while True:
-                conn, addr = server_socket.accept()
-                print(f"Connection established with {addr}")
-                with conn:
-                    data = conn.recv(4096).decode('utf-8')  # Читаем данные
-                    if data:
-                        # Проверяем наличие 'scan_machine.final_result' в заголовке
-                        if 'scan_machine.final_result' in data:
-                            event = extract_json(data)  # Извлекаем и парсим JSON
-                            process_event(event)        # Обрабатываем событие
-                            conn.sendall(b"Event processed\n")  # Ответ клиенту
-                        else:
-                            print("Event does not match the required header. Ignored.")
-                            conn.sendall(b"Event ignored\n")  # Ответ клиенту
-        except KeyboardInterrupt:
-            print("\nServer is shutting down.")
-        except Exception as e:
-            print(f"Server error: {e}")
+        while True:
+            client_socket, client_address = server_socket.accept()
+            print(f"Connection established with {client_address}")
+
+            with client_socket:
+                data = client_socket.recv(4096).decode("utf-8")
+                if data:
+                    event = parse_event(data)
+                    if event:
+                        handle_event(event)
 
 if __name__ == "__main__":
     start_server()
