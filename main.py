@@ -33,6 +33,7 @@ def process_event(event_data):
     else:
         print("No Event data")
 
+
 def handle_client_connection(client_socket):
     """
     Обрабатывает входящие данные от клиента построчно.
