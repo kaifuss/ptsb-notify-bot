@@ -1,6 +1,9 @@
 import socket
 import os
 from datetime import datetime
+import signal
+import sys
+
 
 # Папка для сохранения логов
 LOG_DIR = "incoming"
@@ -49,19 +52,32 @@ def start_server():
     """
     Запускает TCP-сервер.
     """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            server_socket.bind((HOST, PORT))
-            server_socket.listen(MAX_CONN)
-            print(f"Server is listening on {HOST}:{PORT}...")
-            while True:
-                client_socket, addr = server_socket.accept()
-                print(f"Connection established with {addr}")
-                with client_socket:
-                    handle_client_connection(client_socket)
-    except KeyboardInterrupt:
-        client_socket.close()
+    global server_socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.bind((HOST, PORT))
+        server_socket.listen(MAX_CONN)
+        print(f"Server is listening on {HOST}:{PORT}...")
+        while True:
+            client_socket, addr = server_socket.accept()
+            print(f"Connection established with {addr}")
+            with client_socket:
+                handle_client_connection(client_socket)
+
+
+# обработчик закрытия сервера
+def shutdown_server(signal_num, frame):
+    print(f"Recevied signal: {signal_num}")
+    global server_socket
+    if server_socket:
         server_socket.close()
+        print("\nServer was shutted down gracefully.\n")
+    sys.exit(0)
 
 if __name__ == "__main__":
+    # обработчики для завершения сервера gracefully
+    signal.signal(signal.SIGINT, shutdown_server)
+    signal.signal(signal.SIGTERM, shutdown_server)
+
+    # запуск листенера
     start_server()
