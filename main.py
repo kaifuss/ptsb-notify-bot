@@ -83,7 +83,7 @@ async def start_server():
     print(f"Server is listening on {HOST}:{PORT}...")
 
     while True:
-        client_socket, remote_host = server_socket.accept()
+        client_socket, remote_host = await loop.sock_accept(server_socket)
         print(f"Connection established with {remote_host}")
         loop.create_task(handle_client_connection(client_socket, loop))
 
