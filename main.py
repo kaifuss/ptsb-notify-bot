@@ -20,7 +20,7 @@ def process_event(event_data):
     """Обработка события.
     Сохраняет данные, если они содержат 'scan_machine.final_result'.
     """
-    if "scan_machine.final_result" in event_data:
+    if event_data:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         filename = f"event_{timestamp}.log"
         filepath = os.path.join(LOG_DIR, filename)
@@ -28,7 +28,7 @@ def process_event(event_data):
             log_file.write(event_data)
         print(f"Saved event to {filename}")
     else:
-        print("Event does not match 'scan_machine.final_result'. Ignored.")
+        print("No Event data")
 
 def handle_client_connection(client_socket):
     """
