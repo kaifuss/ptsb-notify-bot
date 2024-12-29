@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import signal
 import sys
+import asyncio
 
 
 # Папка для сохранения логов
@@ -16,7 +17,7 @@ MAX_CONN = 20
 BUFFER_SIZE = 4096
 
 
-def process_event(event_data):
+async def process_event(event_data):
     """Обработка события.
     Сохраняет данные, если они содержат 'scan_machine.final_result'.
     """
@@ -33,14 +34,13 @@ def process_event(event_data):
     else:
         print("No Event data")
 
-
 def handle_client_connection(client_socket):
     """
     Обрабатывает входящие данные от клиента построчно.
     """
     buffer = ""
     while True:
-        data = client_socket.recv(BUFFER_SIZE)
+        data = asyncio.to_thread(client_socket.recv(BUFFER_SIZE))
         if not data:
             break
         buffer += data.decode("utf-8")
@@ -54,26 +54,35 @@ def handle_client_connection(client_socket):
     if buffer.strip():
         process_event(buffer.strip())
 
-def start_server():
+
+# сервер листенер всего входящего прикола
+async def start_server():
     """
     Запускает TCP-сервер.
     """
     global server_socket
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((HOST, PORT))
-        server_socket.listen(MAX_CONN)
-        print(f"Server is listening on {HOST}:{PORT}...")
-        while True:
-            client_socket, addr = server_socket.accept()
-            print(f"Connection established with {addr}")
-            with client_socket:
-                handle_client_connection(client_socket)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(MAX_CONN)
+    server_socket.setblocking(False)
+
+    print(f"Server is listening on {HOST}:{PORT}...")
+
+    loop = asyncio.get_event_loop()
+
+    while True:
+        client_socket, addr = loop.sock_accept(server_socket)
+        print(f"Recieved connection from {addr}")
+        asyncio.create_task(handle_client_connection(client_socket))
 
 
 # обработчик закрытия сервера
 def shutdown_server(signal_num, frame):
+    """
+    Хэндлер корректного завершения сервера
+    """
     print(f"Recevied signal: {signal_num}")
     global server_socket
     if server_socket:
@@ -87,4 +96,4 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, shutdown_server)
 
     # запуск листенера
-    start_server()
+    asyncio.run(start_server())
