@@ -13,6 +13,8 @@ os.makedirs(LOG_DIR, exist_ok=True)
 HOST = "0.0.0.0"
 PORT = 514
 MAX_CONN = 20
+BUFFER_SIZE = 4096
+
 
 def process_event(event_data):
     """Обработка события.
@@ -34,7 +36,7 @@ def handle_client_connection(client_socket):
     """
     buffer = ""
     while True:
-        data = client_socket.recv(1024)
+        data = client_socket.recv(BUFFER_SIZE)
         if not data:
             break
         buffer += data.decode("utf-8")
@@ -55,6 +57,7 @@ def start_server():
     global server_socket
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
         server_socket.listen(MAX_CONN)
         print(f"Server is listening on {HOST}:{PORT}...")
