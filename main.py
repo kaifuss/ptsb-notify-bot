@@ -26,7 +26,10 @@ def process_event(event_data):
         filepath = os.path.join(LOG_DIR, filename)
         with open(filepath, "w") as log_file:
             log_file.write(event_data)
-        print(f"Saved event to {filename}")
+        if "scan_machine.final_result" in event_data:
+            print(f"Saved event to {filename}  || Contains <scan_machine.final_result>")
+        else:
+            print(f"Saved event to {filename}")
     else:
         print("No Event data")
 
