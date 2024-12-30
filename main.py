@@ -79,7 +79,7 @@ async def start_server():
 
 # Завершение сервера
 async def shutdown_server():
-    
+    global IS_SEVER_SHUTDOWN_INITIATED
     if IS_SEVER_SHUTDOWN_INITIATED:
         return
     IS_SEVER_SHUTDOWN_INITIATED = True
