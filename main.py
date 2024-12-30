@@ -48,7 +48,7 @@ async def handle_client_connection(client_socket, loop):
     except asyncio_lib.CancelledError:
         print("Task cancelled. Closing client connection.")
     except Exception as e:
-        print(f"Error while handling client connection: {e}")
+        print(f"\nError while handling client connection:\n{e}\n")
     finally:
         client_socket.close()
         if buffer.strip():
@@ -83,13 +83,18 @@ async def shutdown_server():
     if IS_SEVER_SHUTDOWN_INITIATED:
         return
     IS_SEVER_SHUTDOWN_INITIATED = True
-
     print("\nReceived shutdown signal. Closing server gracefully...")
+
     tasks = [t for t in asyncio_lib.all_tasks() if t is not asyncio_lib.current_task()]
     print(f"Cancelling {len(tasks)} tasks...")
     for task in tasks:
         task.cancel()
-    await asyncio_lib.gather(*tasks, return_exceptions=True)
+    
+    try:
+        await asyncio_lib.gather(*tasks, return_exceptions=True)
+    except Exception as e:
+        print(f"\nUnexpected exception occured:\n{e}\n")
+    
     THREADS_EXECUTOR.shutdown(wait=True)
     print("Server shutdown completed.")
 
