@@ -12,10 +12,11 @@ os_lib.makedirs(LOG_DIR, exist_ok=True)
 HOST = "0.0.0.0"
 PORT = 514
 BUFFER_SIZE = 2048
-MAX_THREADS = 8
-
-THREADS_EXECUTOR = ThreadPoolExecutor_lib(max_workers=MAX_THREADS)
 SERVER_SOCKET = None
+IS_SEVER_SHUTDOWN_INITIATED = False
+
+MAX_THREADS = 8
+THREADS_EXECUTOR = ThreadPoolExecutor_lib(max_workers=MAX_THREADS)
 
 
 # Обработка одного события
@@ -78,6 +79,11 @@ async def start_server():
 
 # Завершение сервера
 async def shutdown_server():
+    
+    if IS_SEVER_SHUTDOWN_INITIATED:
+        return
+    IS_SEVER_SHUTDOWN_INITIATED = True
+
     print("\nReceived shutdown signal. Closing server gracefully...")
     tasks = [t for t in asyncio_lib.all_tasks() if t is not asyncio_lib.current_task()]
     print(f"Cancelling {len(tasks)} tasks...")
