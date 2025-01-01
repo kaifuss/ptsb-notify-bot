@@ -41,7 +41,6 @@ def process_event(event_data):
 # Обработка подключения клиента
 async def handle_client_connection(client_socket, loop):
     buffer = "" # буфер для обработки каждого отдельного client_socket
-    was_evet_found = False
     try:
         while True:
             # получаем данные с клиентского подключения и наполняем ими буфер
@@ -51,10 +50,8 @@ async def handle_client_connection(client_socket, loop):
             buffer += received_data.decode("utf-8")
 
             # обрабатывем только нужное нам событие. если нужного нет - дропаем
-            if (not was_evet_found) and (NEEDED_EVENT_DESCRIPTION not in buffer):
+            if NEEDED_EVENT_DESCRIPTION not in buffer:
                 buffer = ""
-            else:
-                was_evet_found = True
             
         list_of_lines_in_event = buffer.splitlines()
         for line in list_of_lines_in_event:
