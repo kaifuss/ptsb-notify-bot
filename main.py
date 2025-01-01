@@ -53,9 +53,9 @@ async def handle_client_connection(client_socket, loop):
             if NEEDED_EVENT_DESCRIPTION not in buffer:
                 buffer = ""
             
-        list_of_lines_in_event = buffer.splitlines()
-        for line in list_of_lines_in_event:
-            await loop.run_in_executor(THREADS_EXECUTOR, process_event, line)
+        while "\n" in buffer:
+            current_line, buffer = buffer.split("\n", 1)
+            await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
 
     # ошибочки
     except asyncio_lib.CancelledError:
@@ -64,8 +64,8 @@ async def handle_client_connection(client_socket, loop):
         print(f"\nError while handling client connection:\n{e}\n")
     finally:
         client_socket.close()
-        #if buffer.strip():
-        #    await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
+        if buffer.strip():
+            await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
         buffer = ""
 
 
