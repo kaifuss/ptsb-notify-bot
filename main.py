@@ -44,6 +44,7 @@ async def handle_client_connection(client_socket, loop):
             if not received_data:
                 break
             buffer += received_data.decode("utf-8")
+            print(f"\n\nCurrent_gathered_data:\n{buffer}")
             #if "- scan_machine.final_result -" not in buffer:
             #    break
             while "\n" in buffer:
