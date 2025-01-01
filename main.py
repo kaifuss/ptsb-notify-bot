@@ -44,7 +44,6 @@ async def handle_client_connection(client_socket, loop):
             if not received_data:
                 break
             buffer += received_data.decode("utf-8")
-            #print(f"\n\nCurrent_gathered_data:\n{buffer}")
             if "- scan_machine.final_result -" not in buffer:
                 buffer = ""
                 break
@@ -52,7 +51,7 @@ async def handle_client_connection(client_socket, loop):
                 current_line, buffer = buffer.split("\n", 1)
                 await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
     except asyncio_lib.CancelledError:
-        print("Task cancelled. Closing client connection.")
+        print(f"Task cancelled from outside. Closing current connection with {client_socket}.")
     except Exception as e:
         print(f"\nError while handling client connection:\n{e}\n")
     finally:
