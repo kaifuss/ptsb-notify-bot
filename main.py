@@ -64,8 +64,8 @@ async def handle_client_connection(client_socket, loop):
         print(f"\nError while handling client connection:\n{e}\n")
     finally:
         client_socket.close()
-        if buffer.strip():
-            await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
+        #if buffer.strip():
+        #    await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
         buffer = ""
 
 
