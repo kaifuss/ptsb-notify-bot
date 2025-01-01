@@ -72,7 +72,7 @@ async def start_server():
     try:
         while True:
             client_socket, addr = await loop.sock_accept(SERVER_SOCKET)
-            print(f"Connection established with {addr}")
+            # print(f"Connection established with {addr}")
             loop.create_task(handle_client_connection(client_socket, loop))
     except asyncio_lib.CancelledError:
         print("Server task cancelled.")
