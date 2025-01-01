@@ -9,12 +9,14 @@ import signal as signal_lib
 LOG_DIR = "incoming"
 os_lib.makedirs(LOG_DIR, exist_ok=True)
 
+# параметры создаваемого сервера
 HOST = "0.0.0.0"
 PORT = 514
 BUFFER_SIZE = 2048
 SERVER_SOCKET = None
 IS_SEVER_SHUTDOWN_INITIATED = False
 
+# настройки многопоточности
 MAX_THREADS = 8
 THREADS_EXECUTOR = ThreadPoolExecutor_lib(max_workers=MAX_THREADS)
 
@@ -39,7 +41,7 @@ async def handle_client_connection(client_socket, loop):
     try:
         while True:
             received_data = await loop.sock_recv(client_socket, BUFFER_SIZE)
-            if not received_data:
+            if "- scan_machine.final_result -" not in received_data:
                 break
             buffer += received_data.decode("utf-8")
             while "\n" in buffer:
@@ -79,40 +81,47 @@ async def start_server():
 
 # Завершение сервера
 async def shutdown_server():
+    # проверка того, что ф-ия отключения уже выполнялась, чтобы избежать двойственного выполнения
     global IS_SEVER_SHUTDOWN_INITIATED
     if IS_SEVER_SHUTDOWN_INITIATED:
         return
     IS_SEVER_SHUTDOWN_INITIATED = True
     print("\nReceived shutdown signal. Closing server gracefully...")
 
+    # списковое включение. создает список всех запущенных задач *all_tasks* кроме текущей *current_task*
+    # все задачи из созданного списка отменяются 
     tasks = [t for t in asyncio_lib.all_tasks() if t is not asyncio_lib.current_task()]
     print(f"Cancelling {len(tasks)} tasks...")
     for task in tasks:
         task.cancel()
     
+    # ?
     try:
         await asyncio_lib.gather(*tasks, return_exceptions=True)
     except Exception as e:
         print(f"\nUnexpected exception occured:\n{e}\n")
-    
+    # завершение управлялки многопоточностью
     THREADS_EXECUTOR.shutdown(wait=True)
     print("Server shutdown completed.")
 
 
 # Настройка обработки сигналов
-def setup_signals(loop):
+def setup_signals(current_event_loop):
     for sig in (signal_lib.SIGINT, signal_lib.SIGTERM):
-        loop.add_signal_handler(sig, lambda: asyncio_lib.create_task(shutdown_server()))
+        current_event_loop.add_signal_handler(sig, lambda: asyncio_lib.create_task(shutdown_server()))
 
 
+# MAIN
 if __name__ == "__main__":
-    loop = asyncio_lib.new_event_loop()
-    asyncio_lib.set_event_loop(loop)
-    setup_signals(loop)
+    # запуск цикла событий для асинхронности
+    main_loop = asyncio_lib.new_event_loop()
+    asyncio_lib.set_event_loop(main_loop)
+    # установка сигналов экстренного завершения программы 
+    setup_signals(main_loop)
     try:
-        loop.run_until_complete(start_server())
+        main_loop.run_until_complete(start_server())
     except (KeyboardInterrupt, SystemExit):
         print("Server stopped by user.")
     finally:
-        loop.run_until_complete(shutdown_server())
-        loop.close()
+        main_loop.run_until_complete(shutdown_server())
+        main_loop.close()
