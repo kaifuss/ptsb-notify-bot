@@ -38,6 +38,7 @@ def process_event(event_data):
             print(f"Saved event to {filename}")
 
 # TODO ? client_socket.settimeout(10)  # Таймаут в 10 секунд
+# TODO подробный траблшут с выводом 1. Полученной data, 2. Общей data, 3. Количество итераций While. Нужно понять - что обрабатывает этот цикл?
 # Обработка подключения клиента
 async def handle_client_connection(client_socket, loop):
     buffer = "" # буфер для обработки каждого отдельного client_socket
