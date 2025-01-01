@@ -50,8 +50,8 @@ async def handle_client_connection(client_socket, loop):
             buffer += received_data.decode("utf-8")
 
             # обрабатывем только нужное нам событие. если нужного нет - дропаем
-            if NEEDED_EVENT_DESCRIPTION not in received_data:
-                buffer = b""
+            if NEEDED_EVENT_DESCRIPTION not in buffer:
+                buffer = ""
                 break
 
             while "\n" in buffer:
@@ -65,7 +65,7 @@ async def handle_client_connection(client_socket, loop):
         client_socket.close()
         if buffer.strip():
             await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
-        buffer = b""
+        buffer = ""
 
 
 # Запуск сервера
