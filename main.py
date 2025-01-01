@@ -41,9 +41,11 @@ async def handle_client_connection(client_socket, loop):
     try:
         while True:
             received_data = await loop.sock_recv(client_socket, BUFFER_SIZE)
-            if "- scan_machine.final_result -" not in received_data:
+            if not received_data:
                 break
             buffer += received_data.decode("utf-8")
+            if "- scan_machine.final_result -" not in buffer:
+                break
             while "\n" in buffer:
                 current_line, buffer = buffer.split("\n", 1)
                 await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
