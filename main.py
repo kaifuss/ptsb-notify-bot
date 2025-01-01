@@ -20,6 +20,9 @@ IS_SEVER_SHUTDOWN_INITIATED = False
 MAX_THREADS = 8
 THREADS_EXECUTOR = ThreadPoolExecutor_lib(max_workers=MAX_THREADS)
 
+# общие параметры? 
+NEEDED_EVENT_DESCRIPTION = "- scan_machine.final_result -"
+
 
 # Обработка одного события
 def process_event(event_data):
@@ -34,17 +37,20 @@ def process_event(event_data):
         else:
             print(f"Saved event to {filename}")
 
-
+# TODO ? client_socket.settimeout(10)  # Таймаут в 10 секунд
 # Обработка подключения клиента
 async def handle_client_connection(client_socket, loop):
-    buffer = ""
     try:
+        buffer = "" # буфер для обработки каждого отдельного client_socket
         while True:
+            # получаем данные с клиентского подключения и наполняем ими буфер
             received_data = await loop.sock_recv(client_socket, BUFFER_SIZE)
             if not received_data:
                 break
             buffer += received_data.decode("utf-8")
-            if "- scan_machine.final_result -" not in buffer:
+
+            # обрабатывем только нужное нам событие. если нужного нет - дропаем
+            if NEEDED_EVENT_DESCRIPTION not in received_data:
                 buffer = ""
                 break
             while "\n" in buffer:
@@ -58,6 +64,7 @@ async def handle_client_connection(client_socket, loop):
         client_socket.close()
         if buffer.strip():
             await loop.run_in_executor(THREADS_EXECUTOR, process_event, buffer.strip())
+        buffer = ""
 
 
 # Запуск сервера
