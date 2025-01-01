@@ -52,7 +52,6 @@ async def handle_client_connection(client_socket, loop):
             # обрабатывем только нужное нам событие. если нужного нет - дропаем
             if NEEDED_EVENT_DESCRIPTION not in buffer:
                 buffer = ""
-                break
 
             while "\n" in buffer:
                 current_line, buffer = buffer.split("\n", 1)
