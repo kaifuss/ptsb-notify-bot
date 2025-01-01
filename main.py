@@ -40,8 +40,8 @@ def process_event(event_data):
 # TODO ? client_socket.settimeout(10)  # Таймаут в 10 секунд
 # Обработка подключения клиента
 async def handle_client_connection(client_socket, loop):
+    buffer = "" # буфер для обработки каждого отдельного client_socket
     try:
-        buffer = "" # буфер для обработки каждого отдельного client_socket
         while True:
             # получаем данные с клиентского подключения и наполняем ими буфер
             received_data = await loop.sock_recv(client_socket, BUFFER_SIZE)
@@ -53,6 +53,7 @@ async def handle_client_connection(client_socket, loop):
             if NEEDED_EVENT_DESCRIPTION not in received_data:
                 buffer = ""
                 break
+
             while "\n" in buffer:
                 current_line, buffer = buffer.split("\n", 1)
                 await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
