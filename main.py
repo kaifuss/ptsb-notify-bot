@@ -52,10 +52,11 @@ async def handle_client_connection(client_socket, loop):
             # обрабатывем только нужное нам событие. если нужного нет - дропаем
             if NEEDED_EVENT_DESCRIPTION not in buffer:
                 buffer = ""
-        # когда буфер закончил заполняться в течение N прослушанных соединений, можем начать обрабатывать
-        while "\n" in buffer:
-            current_line, buffer = buffer.split("\n", 1)
-            await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
+            
+            # когда буфер закончил заполняться в течение N прослушанных соединений, можем начать обрабатывать
+            while "\n" in buffer:
+                current_line, buffer = buffer.split("\n", 1)
+                await loop.run_in_executor(THREADS_EXECUTOR, process_event, current_line.strip())
     # ошибочки
     except asyncio_lib.CancelledError:
         print(f"Task cancelled from outside. Closing current connection with {client_socket}.")
